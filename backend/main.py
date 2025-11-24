@@ -1,15 +1,18 @@
-from fastapi import FastAPI
-from fastapi import UploadFile, File
-from fastapi import HTTPException
-import pdfplumber
+from fastapi import FastAPI, UploadFile, File, HTTPException
+from utils.pdf_utils import extract_clean_text, chunk_text
+from services.embedding_service import embed_text
 
 app = FastAPI();
 
 
-
 #define async function to upload pdf files
-@app.post("/upload-pdf")
+@app.post(
+    "/upload-pdf",
+    summary="Upload a PDF file",
+    description="Saves the PDF, extracts its text and returns it."
+)
 async def upload_pdf(file: UploadFile = File(...)):
+
         if not file.filename.lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Only PDF files are allowed")
             
@@ -17,23 +20,19 @@ async def upload_pdf(file: UploadFile = File(...)):
         save_path = f"uploads/{file.filename}"
         
         with open(save_path, "wb") as f:
-              f.write(await file.read())
+                f.write(await file.read())
 
-        extracted_text = extract_text_from_pdf(save_path)
-
+        cleaned_text = extract_clean_text(save_path)
+        chunks = chunk_text(cleaned_text)
+        
         return  {
                 "message": "PDF uploaded successfully", 
                 "path": save_path,
-                "text": extracted_text
+                "text": cleaned_text,
+                "chunks": chunks
                 }
 
 
-def extract_text_from_pdf(path: str) -> str:
-        text = ""
-        with pdfplumber.open(path) as pdf:
-               for page in pdf.pages:
-                      text += page.extract_text() or ""
-        return text
 
 @app.get("/")
 def home():
