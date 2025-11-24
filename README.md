@@ -1,10 +1,13 @@
-סבבה, הנה **README נקי ומתוקן** בלי שום בריחה, בלי קוד שחתוך, בדיוק כמו שצריך:
+בטח, הנה README מסודר, נקי וברור — כמו שצריך לגיטהאב:
 
 ---
 
 # **rag-pdf-assistant**
 
 A simple RAG-based PDF assistant that lets users upload a PDF, extract its text, convert it into vector embeddings, store them in Qdrant, and ask questions with accurate answers based on the document’s content.
+This project demonstrates a minimal end-to-end RAG system using FastAPI (Python) and React.
+
+---
 
 ## **Features**
 
@@ -13,17 +16,20 @@ A simple RAG-based PDF assistant that lets users upload a PDF, extract its text,
 * Split text into chunks
 * Generate embeddings using OpenAI
 * Store vectors in Qdrant
-* Ask questions and receive RAG-based answers
+* Retrieve relevant chunks using vector search
+* Ask questions and receive accurate RAG-based answers
 * Simple React UI (upload + chat)
+
+---
 
 ## **Tech Stack**
 
-**Frontend:**
+### **Frontend**
 
 * React
 * Axios
 
-**Backend:**
+### **Backend**
 
 * Python
 * FastAPI
@@ -31,25 +37,28 @@ A simple RAG-based PDF assistant that lets users upload a PDF, extract its text,
 * OpenAI API
 * Qdrant (Vector DB)
 
+---
+
 ## **Project Structure**
 
 ```
+docs/                # requirements, architecture notes
 backend/
-  main.py
-  services/
-  qdrant/
-  uploads/
+  main.py            # FastAPI entrypoint
+  services/          # text extraction, chunking, embeddings
+  qdrant/            # vector database interactions
+  uploads/           # temporary PDF storage
 
 frontend/
   src/
-    components/
-    api/
+    components/      # Upload + Chat UI
+    api/             # API requests
 ```
+
+---
 
 ## **License**
 
 MIT
 
 ---
-
-אם תרצה, אוסיף גם **Installation + Running Instructions**.

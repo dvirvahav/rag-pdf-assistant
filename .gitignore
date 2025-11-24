@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.env
+env/
+venv/
+.venv/
+
+# FastAPI / Backend
+uploads/
+.qdrant/
+*.sqlite
+*.db
+
+# Logs
+*.log
+
+# IDE / Editor
+.vscode/
+.idea/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Node / React
+node_modules/
+dist/
+build/
+.env.local
+.env.development
+.env.production
+
+# React cache
+*.cache
+
+# Python build
+build/
+dist/
+*.egg-info/
+
+# Docker
+*.dockerfile
+docker-compose.override.yml
