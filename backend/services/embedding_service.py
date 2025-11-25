@@ -1,27 +1,32 @@
-def chunk_text(text: str, chunk_size: int = 800, overlap: int = 100) -> list:
+import os
+from dotenv import load_dotenv
+from openai import OpenAI
+from services.openai_client import get_openai_client
+
+client = get_openai_client()
+
+
+def embed_chunks(chunks: list[str]) -> list[list[float]]:
     """
-    Split text into overlapping chunks.
-    This improves retrieval accuracy during the RAG step.
+    Creates embeddings for a list of text chunks.
+    Returns a list of vectors (list of floats).
+    Each chunk → one embedding vector.
 
     Args:
-        text (str): text.
-        chunk_size (int): Number of characters per chunk.
-        overlap (int): Number of overlapping characters between chunks.
+        chunks (list[str]): A list of textual chunks.
 
     Returns:
-        list: List of text chunks.
+        list[list[float]]: A list of embedding vectors.
     """
+    if not isinstance(chunks, list):
+        raise TypeError("Expected 'chunks' to be a list of strings")
 
-    chunks = []
-    start = 0
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=chunks
+    )
 
-    while start < len(text):
-        end = start + chunk_size
-        chunk = text[start:end]
+    # response.data[i].embedding -> list[float]
+    vectors = [item.embedding for item in response.data]
 
-        chunks.append(chunk)
-
-        # Move window forward with overlap
-        start += chunk_size - overlap
-
-    return chunks
+    return vectors

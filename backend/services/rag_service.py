@@ -1,9 +1,14 @@
+import os
+from dotenv import load_dotenv
 from openai import OpenAI
+from services.openai_client import get_openai_client
 
-def answer_question(question: str, context_chunks: list) -> str:
+client = get_openai_client()
+
+
+def answer_question(question: str, context_chunks: list[str]) -> str:
     """
-    Takes a user question and the retrieved context chunks (already selected),
-    and generates a final answer using GPT.
+    Uses GPT to answer a question using ONLY the retrieved context.
     """
 
     context_block = "\n\n".join(context_chunks)
@@ -21,7 +26,6 @@ Question:
 Answer:
 """
 
-    client = OpenAI()
     response = client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "user", "content": prompt}]

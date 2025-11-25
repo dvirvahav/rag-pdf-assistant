@@ -9,21 +9,19 @@ from qdrant_client.models import (
 )
 
 # ---------------------------------------------------------
-# Connect to local Qdrant instance (Docker or local install)
+# Connect to Qdrant (Docker/local)
 # ---------------------------------------------------------
 client = QdrantClient(host="localhost", port=6333)
 
-# Name of the collection to store vectors
 COLLECTION_NAME = "pdf_chunks"
 
 
 # ---------------------------------------------------------
-# Initialize collection (create it if missing)
+# Create collection if missing
 # ---------------------------------------------------------
 def init_collection(vector_size: int = 1536):
     """
-    Create the Qdrant collection if it does not exist.
-    Stores text chunks as vectors + metadata.
+    Create the collection if it does not exist yet.
     """
     if not client.collection_exists(COLLECTION_NAME):
         client.create_collection(
@@ -33,15 +31,17 @@ def init_collection(vector_size: int = 1536):
                 distance=Distance.COSINE,
             ),
         )
+        print(f"Created Qdrant collection: {COLLECTION_NAME}")
+    else:
+        print(f"Qdrant collection already exists: {COLLECTION_NAME}")
 
 
 # ---------------------------------------------------------
-# Check whether a PDF file was already processed
+# Check if a file was already indexed
 # ---------------------------------------------------------
 def is_file_indexed(filename: str) -> bool:
     """
-    Check if at least one record exists with payload.source == filename.
-    If yes — the file has already been indexed and should not be processed again.
+    Check if at least one vector with payload.source == filename exists.
     """
     search_filter = Filter(
         must=[
@@ -62,40 +62,43 @@ def is_file_indexed(filename: str) -> bool:
 
 
 # ---------------------------------------------------------
-# Save embeddings + text chunks in Qdrant
+# Insert embeddings + metadata
 # ---------------------------------------------------------
 def upsert_chunks(vectors: list, chunks: list, filename: str):
     """
-    Save chunk embeddings and their text as Qdrant points.
+    Save embeddings + their chunk text inside Qdrant.
     """
     points = []
 
     for i, (vector, text) in enumerate(zip(vectors, chunks)):
         point = PointStruct(
-            id=i,
-            vector=vector,
+            id=f"{filename}_{i}",
+            vector=vector,  # ← must be list[float]
             payload={
                 "text": text,
                 "source": filename,
+                "chunk_id": i
             }
         )
         points.append(point)
 
-    client.upsert(collection_name=COLLECTION_NAME, points=points)
+    client.upsert(
+        collection_name=COLLECTION_NAME,
+        points=points
+    )
 
 
 # ---------------------------------------------------------
-# Search similar chunks for a user query
+# RAG Retrieval — search most similar chunks
 # ---------------------------------------------------------
 def search_similar(query_vector: list, top_k: int = 5):
     """
-    Return the top-k most similar chunks based on cosine similarity.
-    Used during question-answering (RAG retrieval step).
+    Retrieve the top-k most similar chunks using Qdrant's new query API.
     """
-    results = client.search(
+    results = client.query_points(
         collection_name=COLLECTION_NAME,
-        query_vector=query_vector,
+        query=query_vector,   # ← FIXED
         limit=top_k
     )
 
-    return results
+    return results.points  # ← FIXED
