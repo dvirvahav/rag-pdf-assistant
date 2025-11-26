@@ -1,0 +1,3 @@
+QDRANT_HOST = "qdrant"
+QDRANT_PORT = 6333
+COLLECTION_NAME = "pdf_chunks"
