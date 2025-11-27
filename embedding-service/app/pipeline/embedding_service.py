@@ -1,3 +1,4 @@
+import uuid
 from app.services.openai_client import get_openai_client
 
 client = get_openai_client()
@@ -9,7 +10,7 @@ def embed_chunks(chunks: list[str], filename: str) -> list[dict]:
 
     Each entry:
     {
-        "id": "filename_3",
+        "id": "uuid-string",
         "embedding": [...],
         "metadata": {
             "text": "...",
@@ -26,7 +27,7 @@ def embed_chunks(chunks: list[str], filename: str) -> list[dict]:
     vectors = []
     for index, emb in enumerate(response.data):
         vectors.append({
-            "id": f"{filename}_{index}",
+            "id": str(uuid.uuid4()),
             "embedding": emb.embedding,
             "metadata": {
                 "text": chunks[index],

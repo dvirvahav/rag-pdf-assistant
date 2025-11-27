@@ -12,6 +12,41 @@ services:
     networks:
       - ragnet
 
+  postgres:
+    image: postgres:15
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    env_file:
+      - ./infrastructure/env/postgres.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ragnet
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audit_user -d audit_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    env_file:
+      - ./infrastructure/env/rabbitmq.env
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - ragnet
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   file-service:
     build:
       context: ./file-service
@@ -37,6 +72,7 @@ services:
       - shared_storage:/app/storage/uploads
     depends_on:
       - qdrant
+      - rabbitmq
     networks:
       - ragnet
 
@@ -54,9 +90,27 @@ services:
     networks:
       - ragnet
 
+  audit-service:
+    build:
+      context: ./audit-service
+    container_name: audit-service
+    ports:
+      - "8003:8003"
+    env_file:
+      - ./infrastructure/env/audit-service.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - ragnet
+
 networks:
   ragnet:
 
 volumes:
   qdrant_data:
   shared_storage:
+  postgres_data:
+  rabbitmq_data:

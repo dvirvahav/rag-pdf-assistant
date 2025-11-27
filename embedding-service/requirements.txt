@@ -6,3 +6,5 @@ pydantic
 pdfplumber
 openai
 qdrant-client
+
+pika  # RabbitMQ client for audit logging

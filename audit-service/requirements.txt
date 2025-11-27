@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+pika  # RabbitMQ client
+psycopg2-binary  # PostgreSQL client
+sqlalchemy  # ORM for database operations
+pydantic  # Data validation
