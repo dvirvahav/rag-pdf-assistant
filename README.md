@@ -1,5 +1,6 @@
 
 ---
+<img width="2026" height="1019" alt="image" src="https://github.com/user-attachments/assets/68ff25ab-98ba-47ed-89e8-34ccba3ec8bd" />
 
 # **rag-pdf-assistant**
 
