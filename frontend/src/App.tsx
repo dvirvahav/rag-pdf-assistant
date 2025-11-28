@@ -1,9 +1,9 @@
-import { UploadBox } from "./components/UploadBox";
+import { ChatBox } from "./components/ChatBox";
 
 export const App = () => {
   return (
-    <div className="h-screen bg-gray-50 flex items-center justify-center">
-      <UploadBox />
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <ChatBox />
     </div>
   );
 };
