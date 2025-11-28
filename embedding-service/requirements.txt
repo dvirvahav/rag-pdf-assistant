@@ -8,3 +8,4 @@ openai
 qdrant-client
 
 pika  # RabbitMQ client for audit logging
+redis  # Redis client for job status tracking

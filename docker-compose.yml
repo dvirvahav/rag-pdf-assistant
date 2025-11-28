@@ -47,6 +47,21 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ragnet
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   file-service:
     build:
       context: ./file-service
@@ -57,6 +72,11 @@ services:
       - ./infrastructure/env/file-service.env
     volumes:
       - shared_storage:/app/storage/uploads
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ragnet
 
@@ -71,8 +91,12 @@ services:
     volumes:
       - shared_storage:/app/storage/uploads
     depends_on:
-      - qdrant
-      - rabbitmq
+      qdrant:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ragnet
 
@@ -106,6 +130,17 @@ services:
     networks:
       - ragnet
 
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - file-service
+    networks:
+      - ragnet
+
 networks:
   ragnet:
 
@@ -114,3 +149,4 @@ volumes:
   shared_storage:
   postgres_data:
   rabbitmq_data:
+  redis_data:

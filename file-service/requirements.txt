@@ -1,3 +1,5 @@
 fastapi
 uvicorn
 python-multipart # to upload files
+pika  # RabbitMQ client for publishing events
+redis  # Redis client for job status tracking
