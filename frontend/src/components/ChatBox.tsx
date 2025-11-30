@@ -1,8 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 
 const FILE_API_URL = "http://localhost:8000";
 const RAG_API_URL = "http://localhost:8002";
 const POLL_INTERVAL = 2000;
+const STORAGE_KEY = "pdf_assistant_files";
 
 interface FileAttachment {
   filename: string;
@@ -17,6 +18,24 @@ interface Message {
   isLoading?: boolean;
 }
 
+// localStorage helpers
+const getStoredFiles = (): string[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+};
+
+const addStoredFile = (filename: string) => {
+  const files = getStoredFiles();
+  if (!files.includes(filename)) {
+    files.unshift(filename);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
+  }
+};
+
 export const ChatBox = () => {
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: "Hello! Upload a PDF and ask me questions about it.", sender: "bot" },
@@ -26,12 +45,23 @@ export const ChatBox = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isAsking, setIsAsking] = useState(false);
   const [currentFilename, setCurrentFilename] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>(getStoredFiles());
+  const [showFileSelector, setShowFileSelector] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.height = Math.min(textareaRef.current.scrollHeight, 200) + "px";
+    }
+  }, [input]);
 
   const updateAttachmentStatus = (messageId: number, status: FileAttachment["status"]) => {
     setMessages((prev) =>
@@ -54,6 +84,8 @@ export const ChatBox = () => {
           if (data.status === "completed") {
             updateAttachmentStatus(messageId, "completed");
             setCurrentFilename(filename);
+            addStoredFile(filename);
+            setUploadedFiles(getStoredFiles());
             setMessages((prev) => [
               ...prev,
               {
@@ -131,7 +163,7 @@ export const ChatBox = () => {
     if (!currentFilename) {
       setMessages((prev) => [
         ...prev,
-        { id: Date.now(), text: "Please upload a PDF first before asking questions.", sender: "bot" },
+        { id: Date.now(), text: "Please upload or select a PDF first before asking questions.", sender: "bot" },
       ]);
       return;
     }
@@ -139,7 +171,6 @@ export const ChatBox = () => {
     setIsAsking(true);
     const loadingMsgId = Date.now();
 
-    // Add loading message
     setMessages((prev) => [
       ...prev,
       { id: loadingMsgId, text: "", sender: "bot", isLoading: true },
@@ -156,7 +187,6 @@ export const ChatBox = () => {
       if (!response.ok) throw new Error("RAG request failed");
       const data = await response.json();
 
-      // Replace loading message with actual response
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === loadingMsgId
@@ -164,7 +194,7 @@ export const ChatBox = () => {
             : msg
         )
       );
-    } catch (error) {
+    } catch {
       setMessages((prev) =>
         prev.map((msg) =>
           msg.id === loadingMsgId
@@ -186,7 +216,7 @@ export const ChatBox = () => {
     askQuestion(question);
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -207,6 +237,15 @@ export const ChatBox = () => {
     if (file?.type === "application/pdf") {
       uploadFile(file);
     }
+  };
+
+  const selectFile = (filename: string) => {
+    setCurrentFilename(filename);
+    setShowFileSelector(false);
+    setMessages((prev) => [
+      ...prev,
+      { id: Date.now(), text: `Switched to "${filename}". You can now ask questions about this file.`, sender: "bot" },
+    ]);
   };
 
   // File Attachment Card Component
@@ -249,7 +288,6 @@ export const ChatBox = () => {
     );
   };
 
-  // Loading dots component
   const LoadingDots = () => (
     <div className="flex items-center gap-1">
       <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -260,8 +298,8 @@ export const ChatBox = () => {
 
   return (
     <div
-      className={`w-full max-w-2xl h-[600px] flex flex-col bg-white rounded-xl shadow-lg border relative ${
-        isDragging ? "border-blue-500 bg-blue-50" : "border-gray-200"
+      className={`h-screen w-full flex flex-col bg-white relative ${
+        isDragging ? "bg-blue-50" : ""
       }`}
       onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
       onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
@@ -269,103 +307,163 @@ export const ChatBox = () => {
     >
       {/* Drag Overlay */}
       {isDragging && (
-        <div className="absolute inset-0 flex items-center justify-center bg-blue-50/95 rounded-xl z-20 border-2 border-dashed border-blue-400">
+        <div className="absolute inset-0 flex items-center justify-center bg-blue-50/95 z-20 border-2 border-dashed border-blue-400">
           <div className="text-center">
-            <svg className="w-12 h-12 mx-auto text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-16 h-16 mx-auto text-blue-500 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
             </svg>
-            <p className="text-blue-600 font-medium">Drop PDF here</p>
+            <p className="text-xl text-blue-600 font-medium">Drop PDF here</p>
           </div>
         </div>
       )}
 
       {/* Header */}
-      <div className="px-4 py-3 border-b border-gray-200 bg-gray-50 rounded-t-xl flex items-center justify-between">
-        <h2 className="font-semibold text-gray-700">PDF Assistant</h2>
-        {currentFilename && (
-          <span className="text-xs text-gray-500 bg-gray-200 px-2 py-1 rounded">
-            📄 {currentFilename}
-          </span>
-        )}
+      <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-gray-800">PDF Assistant</h1>
+        <div className="relative">
+          <button
+            onClick={() => setShowFileSelector(!showFileSelector)}
+            className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm"
+          >
+            <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+              <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+            </svg>
+            <span className="text-gray-700 max-w-[200px] truncate">
+              {currentFilename || "Select a file"}
+            </span>
+            <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {/* File Selector Dropdown */}
+          {showFileSelector && (
+            <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
+              <div className="p-2">
+                {uploadedFiles.length === 0 ? (
+                  <p className="text-sm text-gray-500 p-2">No files uploaded yet</p>
+                ) : (
+                  uploadedFiles.map((file) => (
+                    <button
+                      key={file}
+                      onClick={() => selectFile(file)}
+                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition ${
+                        file === currentFilename
+                          ? "bg-blue-50 text-blue-700"
+                          : "hover:bg-gray-100 text-gray-700"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2">
+                        <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" />
+                        </svg>
+                        <span className="truncate">{file}</span>
+                        {file === currentFilename && (
+                          <svg className="w-4 h-4 text-blue-600 ml-auto" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    </button>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
-          >
-            <div className={`max-w-[80%] ${msg.attachment ? "" : "px-4 py-2 rounded-2xl"} ${
-              msg.sender === "user" && !msg.attachment
-                ? "bg-blue-600 text-white rounded-br-md"
-                : !msg.attachment
-                ? "bg-gray-100 text-gray-800 rounded-bl-md"
-                : ""
-            }`}>
-              {msg.attachment ? (
-                <FileCard attachment={msg.attachment} />
-              ) : msg.isLoading ? (
-                <LoadingDots />
-              ) : (
-                msg.text
-              )}
+      <div className="flex-1 overflow-y-auto">
+        <div className="max-w-3xl mx-auto p-6 space-y-6">
+          {messages.map((msg) => (
+            <div
+              key={msg.id}
+              className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div className={`max-w-[85%] ${msg.attachment ? "" : "px-4 py-3 rounded-2xl"} ${
+                msg.sender === "user" && !msg.attachment
+                  ? "bg-blue-600 text-white rounded-br-md"
+                  : !msg.attachment
+                  ? "bg-gray-100 text-gray-800 rounded-bl-md"
+                  : ""
+              }`}>
+                {msg.attachment ? (
+                  <FileCard attachment={msg.attachment} />
+                ) : msg.isLoading ? (
+                  <LoadingDots />
+                ) : (
+                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
       {/* Input Bar */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-xl">
-        <div className="flex items-center gap-2">
-          <input
-            type="file"
-            accept="application/pdf"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={isUploading}
-          />
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            disabled={isUploading}
-            className={`p-2 rounded-lg transition ${
-              isUploading ? "text-gray-400 cursor-not-allowed" : "text-gray-500 hover:bg-gray-200"
-            }`}
-            title="Upload PDF"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-            </svg>
-          </button>
+      <div className="border-t border-gray-200 bg-white p-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-end gap-3 bg-gray-50 rounded-2xl border border-gray-200 p-3">
+            <input
+              type="file"
+              accept="application/pdf"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={isUploading}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploading}
+              className={`p-2 rounded-lg transition flex-shrink-0 ${
+                isUploading ? "text-gray-400 cursor-not-allowed" : "text-gray-500 hover:bg-gray-200"
+              }`}
+              title="Upload PDF"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
+            </button>
 
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={currentFilename ? "Ask a question..." : "Upload a PDF first..."}
-            disabled={isAsking}
-            className="flex-1 px-4 py-2 bg-white border border-gray-300 rounded-full text-sm focus:outline-none focus:border-blue-400 disabled:bg-gray-100"
-          />
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={currentFilename ? "Ask a question about your PDF..." : "Upload or select a PDF first..."}
+              disabled={isAsking}
+              rows={1}
+              className="flex-1 bg-transparent resize-none text-sm focus:outline-none disabled:text-gray-400 max-h-[200px]"
+              style={{ minHeight: "24px" }}
+            />
 
-          <button
-            onClick={handleSend}
-            disabled={!input.trim() || isAsking}
-            className={`p-2 rounded-lg transition ${
-              input.trim() && !isAsking ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-          </button>
+            <button
+              onClick={handleSend}
+              disabled={!input.trim() || isAsking}
+              className={`p-2 rounded-lg transition flex-shrink-0 ${
+                input.trim() && !isAsking ? "bg-blue-600 text-white hover:bg-blue-700" : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </button>
+          </div>
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            {currentFilename ? `Chatting about: ${currentFilename}` : "Drag & drop PDF or click 📎 to upload"}
+          </p>
         </div>
-        <p className="text-xs text-gray-400 mt-2 text-center">
-          {currentFilename ? `Chatting about: ${currentFilename}` : "Drag & drop PDF or click 📎 to upload"}
-        </p>
       </div>
+
+      {/* Click outside to close dropdown */}
+      {showFileSelector && (
+        <div
+          className="fixed inset-0 z-20"
+          onClick={() => setShowFileSelector(false)}
+        />
+      )}
     </div>
   );
 };
