@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect } from "react";
 const FILE_API_URL = "http://localhost:8000";
 const RAG_API_URL = "http://localhost:8002";
 const POLL_INTERVAL = 2000;
-const STORAGE_KEY = "pdf_assistant_files";
 
 interface FileAttachment {
   filename: string;
@@ -18,24 +17,6 @@ interface Message {
   isLoading?: boolean;
 }
 
-// localStorage helpers
-const getStoredFiles = (): string[] => {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    return stored ? JSON.parse(stored) : [];
-  } catch {
-    return [];
-  }
-};
-
-const addStoredFile = (filename: string) => {
-  const files = getStoredFiles();
-  if (!files.includes(filename)) {
-    files.unshift(filename);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(files));
-  }
-};
-
 export const ChatBox = () => {
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: "Hello! Upload a PDF and ask me questions about it.", sender: "bot" },
@@ -45,8 +26,9 @@ export const ChatBox = () => {
   const [isUploading, setIsUploading] = useState(false);
   const [isAsking, setIsAsking] = useState(false);
   const [currentFilename, setCurrentFilename] = useState<string | null>(null);
-  const [uploadedFiles, setUploadedFiles] = useState<string[]>(getStoredFiles());
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [showFileSelector, setShowFileSelector] = useState(false);
+  const [isLoadingFiles, setIsLoadingFiles] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -54,6 +36,26 @@ export const ChatBox = () => {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
+
+  // Fetch files from API
+  const fetchFiles = async () => {
+    try {
+      const response = await fetch(`${FILE_API_URL}/files/`);
+      if (response.ok) {
+        const data = await response.json();
+        setUploadedFiles(data.files || []);
+      }
+    } catch (error) {
+      console.error("Failed to fetch files:", error);
+    } finally {
+      setIsLoadingFiles(false);
+    }
+  };
+
+  // Fetch files on component mount
+  useEffect(() => {
+    fetchFiles();
+  }, []);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -84,8 +86,8 @@ export const ChatBox = () => {
           if (data.status === "completed") {
             updateAttachmentStatus(messageId, "completed");
             setCurrentFilename(filename);
-            addStoredFile(filename);
-            setUploadedFiles(getStoredFiles());
+            // Refresh file list from API
+            await fetchFiles();
             setMessages((prev) => [
               ...prev,
               {
@@ -322,7 +324,10 @@ export const ChatBox = () => {
         <h1 className="text-xl font-semibold text-gray-800">PDF Assistant</h1>
         <div className="relative">
           <button
-            onClick={() => setShowFileSelector(!showFileSelector)}
+            onClick={() => {
+              setShowFileSelector(!showFileSelector);
+              if (!showFileSelector) fetchFiles(); // Refresh on open
+            }}
             className="flex items-center gap-2 px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition text-sm"
           >
             <svg className="w-4 h-4 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
@@ -340,7 +345,11 @@ export const ChatBox = () => {
           {showFileSelector && (
             <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
               <div className="p-2">
-                {uploadedFiles.length === 0 ? (
+                {isLoadingFiles ? (
+                  <div className="flex items-center justify-center p-4">
+                    <div className="w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
+                  </div>
+                ) : uploadedFiles.length === 0 ? (
                   <p className="text-sm text-gray-500 p-2">No files uploaded yet</p>
                 ) : (
                   uploadedFiles.map((file) => (
