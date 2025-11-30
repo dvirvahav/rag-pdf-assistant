@@ -10,6 +10,11 @@ QDRANT_PORT = 6333
 
 COLLECTION_NAME = "pdf_chunks"
 
+# Parallel processing settings
+MAX_EXTRACTION_WORKERS = int(os.getenv("MAX_EXTRACTION_WORKERS", "8"))
+MAX_EMBEDDING_WORKERS = int(os.getenv("MAX_EMBEDDING_WORKERS", "4"))
+EMBEDDING_BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE", "100"))
+
 # RabbitMQ settings for audit logging
 RABBITMQ_HOST = os.getenv("RABBITMQ_HOST", "rabbitmq")
 RABBITMQ_PORT = int(os.getenv("RABBITMQ_PORT", "5672"))

@@ -18,7 +18,7 @@ def process_file(filename: str):
     4. Chunk text
     5. Embed chunks
     6. Store vectors in Qdrant
-    
+
     On failure at any step, an audit event is published to RabbitMQ.
     """
     try:
@@ -41,7 +41,7 @@ def process_file(filename: str):
 
     # 1) Extract text from PDF
     try:
-        text = extract_text_from_pdf(filepath)
+        text = extract_text_from_pdf(filepath, filename)
     except Exception as e:
         publish_audit_event("EXTRACTION_FAILED", {
             "filename": filename,
