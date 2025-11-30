@@ -4,6 +4,12 @@ from sqlalchemy.sql import func
 from pydantic import BaseModel
 from typing import Optional, Any
 from datetime import datetime
+import sys
+from pathlib import Path
+
+# Add parent directory to path to import common package
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+from common.event_types import EventType
 
 Base = declarative_base()
 
@@ -24,7 +30,7 @@ class AuditEventCreate(BaseModel):
     """
     Pydantic model for creating audit events (input validation).
     """
-    event_type: str
+    event_type: EventType
     service_name: str
     payload: Optional[Any] = None
 
@@ -34,7 +40,7 @@ class AuditEventResponse(BaseModel):
     Pydantic model for audit event responses.
     """
     id: int
-    event_type: str
+    event_type: EventType
     service_name: str
     payload: Optional[Any] = None
     created_at: datetime

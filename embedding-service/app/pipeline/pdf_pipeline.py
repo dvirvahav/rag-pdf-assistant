@@ -1,5 +1,12 @@
 import os
 import traceback
+import sys
+from pathlib import Path
+
+# Add parent directory to path to import common package
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
+from common.event_types import EventType
+
 from app.config import STORAGE_PATH
 from app.pipeline.extraction_service import extract_text_from_pdf
 from app.pipeline.cleaning_service import clean_text
@@ -24,7 +31,7 @@ def process_file(filename: str):
     try:
         init_collection()
     except Exception as e:
-        publish_audit_event("COLLECTION_INIT_FAILED", {
+        publish_audit_event(EventType.COLLECTION_INIT_FAILED, {
             "filename": filename,
             "error": str(e),
             "traceback": traceback.format_exc()
@@ -33,7 +40,7 @@ def process_file(filename: str):
 
     filepath = os.path.join(STORAGE_PATH, filename)
     if not os.path.exists(filepath):
-        publish_audit_event("FILE_NOT_FOUND", {
+        publish_audit_event(EventType.FILE_NOT_FOUND, {
             "filename": filename,
             "filepath": filepath
         })
@@ -43,7 +50,7 @@ def process_file(filename: str):
     try:
         text = extract_text_from_pdf(filepath, filename)
     except Exception as e:
-        publish_audit_event("EXTRACTION_FAILED", {
+        publish_audit_event(EventType.EXTRACTION_FAILED, {
             "filename": filename,
             "step": "extract_text_from_pdf",
             "error": str(e),
@@ -55,7 +62,7 @@ def process_file(filename: str):
     try:
         cleaned = clean_text(text)
     except Exception as e:
-        publish_audit_event("CLEANING_FAILED", {
+        publish_audit_event(EventType.CLEANING_FAILED, {
             "filename": filename,
             "step": "clean_text",
             "error": str(e),
@@ -67,7 +74,7 @@ def process_file(filename: str):
     try:
         chunks = chunk_text(cleaned)
     except Exception as e:
-        publish_audit_event("CHUNKING_FAILED", {
+        publish_audit_event(EventType.CHUNKING_FAILED, {
             "filename": filename,
             "step": "chunk_text",
             "error": str(e),
@@ -79,7 +86,7 @@ def process_file(filename: str):
     try:
         vectors = embed_chunks(chunks, filename)
     except Exception as e:
-        publish_audit_event("EMBEDDING_FAILED", {
+        publish_audit_event(EventType.EMBEDDING_FAILED, {
             "filename": filename,
             "step": "embed_chunks",
             "chunks_count": len(chunks),
@@ -92,7 +99,7 @@ def process_file(filename: str):
     try:
         store_vectors(vectors)
     except Exception as e:
-        publish_audit_event("STORAGE_FAILED", {
+        publish_audit_event(EventType.STORAGE_FAILED, {
             "filename": filename,
             "step": "store_vectors",
             "vectors_count": len(vectors),

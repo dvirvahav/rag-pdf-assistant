@@ -2,10 +2,14 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Copy common package first
+COPY common/ /app/common/
+
+# Copy service-specific files
+COPY rag-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY app ./app
+COPY rag-service/ .
 
 EXPOSE 8002
 

@@ -9,10 +9,14 @@ RUN apt-get update && apt-get install -y \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+# Copy common package first
+COPY common/ /app/common/
+
+# Copy service-specific files
+COPY embedding-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .       
+COPY embedding-service/ .
 
 EXPOSE 8001
 

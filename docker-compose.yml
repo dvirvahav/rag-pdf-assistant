@@ -64,7 +64,8 @@ services:
 
   file-service:
     build:
-      context: ./file-service
+      context: .
+      dockerfile: ./file-service/Dockerfile
     container_name: file-service
     ports:
       - "8000:8000"
@@ -82,7 +83,8 @@ services:
 
   embedding-service:
     build:
-      context: ./embedding-service
+      context: .
+      dockerfile: ./embedding-service/Dockerfile
     container_name: embedding-service
     ports:
       - "8001:8001"
@@ -102,7 +104,8 @@ services:
 
   rag-service:
     build:
-      context: ./rag-service
+      context: .
+      dockerfile: ./rag-service/Dockerfile
     container_name: rag-service
     ports:
       - "8002:8002"
@@ -116,7 +119,8 @@ services:
 
   audit-service:
     build:
-      context: ./audit-service
+      context: .
+      dockerfile: ./audit-service/Dockerfile
     container_name: audit-service
     ports:
       - "8003:8003"

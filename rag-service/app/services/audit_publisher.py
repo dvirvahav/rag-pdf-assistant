@@ -8,17 +8,16 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent))
 from common.event_types import EventType
 
-from app.config import RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD, EMBEDDING_QUEUE
+from app.config import RABBITMQ_HOST, RABBITMQ_PORT, RABBITMQ_USER, RABBITMQ_PASSWORD, RABBITMQ_QUEUE
 
 
-def publish_file_uploaded_event(job_id: str, filename: str, filepath: str) -> bool:
+def publish_audit_event(event_type: EventType, payload: Optional[Dict[str, Any]] = None) -> bool:
     """
-    Publish a file uploaded event to RabbitMQ for the embedding service to process.
+    Publish an audit event to RabbitMQ for logging.
 
     Args:
-        job_id: Unique job identifier for tracking status
-        filename: Name of the uploaded file
-        filepath: Full path to the uploaded file
+        event_type: Type of the audit event (e.g., RAG_QUERY_RECEIVED, RAG_RESPONSE_SENT)
+        payload: Optional dictionary with additional event data
 
     Returns:
         True if the message was published successfully, False otherwise.
@@ -37,20 +36,19 @@ def publish_file_uploaded_event(job_id: str, filename: str, filepath: str) -> bo
         channel = connection.channel()
 
         # Declare queue (creates if doesn't exist)
-        channel.queue_declare(queue=EMBEDDING_QUEUE, durable=True)
+        channel.queue_declare(queue=RABBITMQ_QUEUE, durable=True)
 
-        # Prepare message with job_id for status tracking
+        # Prepare message
         message = {
-            "event_type": EventType.FILE_UPLOADED.value,
-            "job_id": job_id,
-            "filename": filename,
-            "filepath": filepath
+            "event_type": event_type.value,
+            "service_name": "rag-service",
+            "payload": payload
         }
 
         # Publish message
         channel.basic_publish(
             exchange='',
-            routing_key=EMBEDDING_QUEUE,
+            routing_key=RABBITMQ_QUEUE,
             body=json.dumps(message),
             properties=pika.BasicProperties(
                 delivery_mode=2,  # Make message persistent
@@ -61,10 +59,10 @@ def publish_file_uploaded_event(job_id: str, filename: str, filepath: str) -> bo
         # Close connection
         connection.close()
 
-        print(f"File uploaded event published for job {job_id}: {filename}")
+        print(f"Audit event published: {event_type}")
         return True
 
     except Exception as e:
-        # Log the error but don't raise - publishing should not break the upload flow
-        print(f"Failed to publish file uploaded event: {e}")
+        # Log the error but don't raise - audit logging should not break the main flow
+        print(f"Failed to publish audit event: {e}")
         return False

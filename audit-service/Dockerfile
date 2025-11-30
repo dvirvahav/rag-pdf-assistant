@@ -2,10 +2,14 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Copy common package first
+COPY common/ /app/common/
+
+# Copy service-specific files
+COPY audit-service/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY audit-service/ .
 
 EXPOSE 8003
 
