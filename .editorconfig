@@ -1,0 +1,23 @@
+root = true                              # this is the main config file
+
+[*]
+charset = utf-8                          # use utf-8 encoding
+end_of_line = lf                         # use LF line endings
+insert_final_newline = true              # add a newline at the end of every file
+trim_trailing_whitespace = true          # remove spaces at the end of lines
+
+[*.py]
+indent_style = space                     # use spaces for indent
+indent_size = 4                          # 4 spaces per indent
+
+[*.{js,ts,jsx,tsx}]
+indent_style = space                     # use spaces for JS/TS files
+indent_size = 2                          # 2 spaces is common
+quote_type = single                      # prefer single quotes
+max_line_length = 120                    # recommended line length
+
+[*.json]
+indent_size = 2                          # JSON usually uses 2 spaces
+
+[*.md]
+trim_trailing_whitespace = false         # keep trailing spaces in Markdown
