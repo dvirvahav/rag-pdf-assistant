@@ -62,6 +62,26 @@ services:
       timeout: 5s
       retries: 5
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: keycloak
+    command: start-dev --import-realm
+    ports:
+      - "8080:8080"
+    env_file:
+      - ./infrastructure/env/keycloak.env
+    volumes:
+      - ./infrastructure/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
+      - keycloak_data:/opt/keycloak/data
+    networks:
+      - ragnet
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080;echo -e 'GET /health/ready HTTP/1.1\r\nhost: http://localhost\r\nConnection: close\r\n\r\n' >&3;grep 'HTTP/1.1 200 OK' <&3"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
   file-service:
     build:
       context: .
@@ -154,3 +174,4 @@ volumes:
   postgres_data:
   rabbitmq_data:
   redis_data:
+  keycloak_data:

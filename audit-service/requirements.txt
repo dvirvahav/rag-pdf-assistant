@@ -1,6 +1,8 @@
 fastapi
 uvicorn
-pika  # RabbitMQ client
+pika  # RabbitMQ client for consuming events
 psycopg2-binary  # PostgreSQL client
+python-jose[cryptography]  # JWT validation
+requests  # HTTP client for JWKS
 sqlalchemy  # ORM for database operations
 pydantic  # Data validation

@@ -9,3 +9,5 @@ qdrant-client
 
 pika  # RabbitMQ client for audit logging
 redis  # Redis client for job status tracking
+python-jose[cryptography]  # JWT validation
+requests  # HTTP client for JWKS

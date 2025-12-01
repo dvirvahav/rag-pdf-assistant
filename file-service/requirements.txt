@@ -3,3 +3,5 @@ uvicorn
 python-multipart # to upload files
 pika  # RabbitMQ client for publishing events
 redis  # Redis client for job status tracking
+python-jose[cryptography]  # JWT validation
+requests  # HTTP client for JWKS

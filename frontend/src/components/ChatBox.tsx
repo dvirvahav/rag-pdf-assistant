@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
+import { UserProfile } from "./UserProfile";
+import apiClient, { ragClient } from "../utils/apiClient";
 
-const FILE_API_URL = "http://localhost:8000";
-const RAG_API_URL = "http://localhost:8002";
 const POLL_INTERVAL = 2000;
 
 interface FileAttachment {
@@ -40,11 +40,8 @@ export const ChatBox = () => {
   // Fetch files from API
   const fetchFiles = async () => {
     try {
-      const response = await fetch(`${FILE_API_URL}/files/`);
-      if (response.ok) {
-        const data = await response.json();
-        setUploadedFiles(data.files || []);
-      }
+      const response = await apiClient.get('/files/');
+      setUploadedFiles(response.data.files || []);
     } catch (error) {
       console.error("Failed to fetch files:", error);
     } finally {
@@ -79,9 +76,8 @@ export const ChatBox = () => {
     return new Promise((resolve, reject) => {
       const poll = async () => {
         try {
-          const response = await fetch(`${FILE_API_URL}/files/jobs/${jobId}/status`);
-          if (!response.ok) throw new Error("Failed");
-          const data = await response.json();
+          const response = await apiClient.get(`/files/jobs/${jobId}/status`);
+          const data = response.data;
 
           if (data.status === "completed") {
             updateAttachmentStatus(messageId, "completed");
@@ -141,12 +137,12 @@ export const ChatBox = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await fetch(`${FILE_API_URL}/files/upload`, {
-        method: "POST",
-        body: formData,
+      const response = await apiClient.post('/files/upload', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
-      if (!response.ok) throw new Error("Upload failed");
-      const data = await response.json();
+      const data = response.data;
 
       updateAttachmentStatus(messageId, "processing");
       await pollJobStatus(data.job_id, messageId, file.name);
@@ -180,14 +176,11 @@ export const ChatBox = () => {
     setTimeout(scrollToBottom, 100);
 
     try {
-      const response = await fetch(`${RAG_API_URL}/rag/ask`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ filename: currentFilename, question }),
+      const response = await ragClient.post('/rag/ask', {
+        filename: currentFilename,
+        question,
       });
-
-      if (!response.ok) throw new Error("RAG request failed");
-      const data = await response.json();
+      const data = response.data;
 
       setMessages((prev) =>
         prev.map((msg) =>
@@ -322,7 +315,9 @@ export const ChatBox = () => {
       {/* Header */}
       <div className="px-6 py-4 border-b border-gray-200 bg-white flex items-center justify-between">
         <h1 className="text-xl font-semibold text-gray-800">PDF Assistant</h1>
-        <div className="relative">
+        <div className="flex items-center gap-4">
+          <UserProfile />
+          <div className="relative">
           <button
             onClick={() => {
               setShowFileSelector(!showFileSelector);
@@ -341,7 +336,7 @@ export const ChatBox = () => {
             </svg>
           </button>
 
-          {/* File Selector Dropdown */}
+            {/* File Selector Dropdown */}
           {showFileSelector && (
             <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-lg shadow-lg z-30">
               <div className="p-2">
@@ -378,7 +373,8 @@ export const ChatBox = () => {
                 )}
               </div>
             </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 

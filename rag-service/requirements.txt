@@ -5,3 +5,6 @@ pydantic
 
 openai
 qdrant-client
+python-jose[cryptography]  # JWT validation
+requests  # HTTP client for JWKS
+pika  # RabbitMQ client for audit logging
