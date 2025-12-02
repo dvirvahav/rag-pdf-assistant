@@ -2,8 +2,9 @@ import axios from 'axios';
 import keycloak from '../auth/keycloakConfig';
 
 // Create axios instance with base configuration
+// All requests now go through the API Gateway
 const apiClient = axios.create({
-  baseURL: 'http://localhost:8000', // File service base URL
+  baseURL: 'http://localhost:8080', // API Gateway URL
   headers: {
     'Content-Type': 'application/json',
   },
@@ -55,45 +56,3 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
-
-// RAG service client
-export const ragClient = axios.create({
-  baseURL: 'http://localhost:8002', // RAG service base URL
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// Add same interceptors to RAG client
-ragClient.interceptors.request.use(
-  (config) => {
-    if (keycloak.authenticated && keycloak.token) {
-      config.headers.Authorization = `Bearer ${keycloak.token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-ragClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      try {
-        const refreshed = await keycloak.updateToken(5);
-        if (refreshed) {
-          originalRequest.headers.Authorization = `Bearer ${keycloak.token}`;
-          return ragClient(originalRequest);
-        }
-      } catch (refreshError) {
-        keycloak.login();
-        return Promise.reject(refreshError);
-      }
-    }
-    return Promise.reject(error);
-  }
-);

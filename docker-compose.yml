@@ -67,7 +67,7 @@ services:
     container_name: keycloak
     command: start-dev --import-realm
     ports:
-      - "8080:8080"
+      - "8090:8080"
     env_file:
       - ./infrastructure/env/keycloak.env
     volumes:
@@ -81,6 +81,33 @@ services:
       timeout: 5s
       retries: 10
       start_period: 60s
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: ./api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - KEYCLOAK_URL=http://keycloak:8080
+      - KEYCLOAK_REALM=rag-assistant
+      - KEYCLOAK_CLIENT_ID=rag-backend
+      - FILE_SERVICE_URL=http://file-service:8000
+      - EMBEDDING_SERVICE_URL=http://embedding-service:8001
+      - RAG_SERVICE_URL=http://rag-service:8002
+      - AUDIT_SERVICE_URL=http://audit-service:8003
+      - ADMIN_SERVICE_URL=http://admin-service:8000
+      - CORS_ORIGINS=["http://localhost:3000"]
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      file-service:
+        condition: service_started
+      rag-service:
+        condition: service_started
+    networks:
+      - ragnet
 
   file-service:
     build:

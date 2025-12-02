@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { UserProfile } from "./UserProfile";
-import apiClient, { ragClient } from "../utils/apiClient";
+import apiClient from "../utils/apiClient";
 
 const POLL_INTERVAL = 2000;
 
@@ -40,7 +40,7 @@ export const ChatBox = () => {
   // Fetch files from API
   const fetchFiles = async () => {
     try {
-      const response = await apiClient.get('/files/');
+      const response = await apiClient.get('/api/files/');
       setUploadedFiles(response.data.files || []);
     } catch (error) {
       console.error("Failed to fetch files:", error);
@@ -76,7 +76,7 @@ export const ChatBox = () => {
     return new Promise((resolve, reject) => {
       const poll = async () => {
         try {
-          const response = await apiClient.get(`/files/jobs/${jobId}/status`);
+          const response = await apiClient.get(`/api/files/jobs/${jobId}/status`);
           const data = response.data;
 
           if (data.status === "completed") {
@@ -137,7 +137,7 @@ export const ChatBox = () => {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const response = await apiClient.post('/files/upload', formData, {
+      const response = await apiClient.post('/api/files/upload', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
@@ -176,7 +176,7 @@ export const ChatBox = () => {
     setTimeout(scrollToBottom, 100);
 
     try {
-      const response = await ragClient.post('/rag/ask', {
+      const response = await apiClient.post('/api/rag/ask', {
         filename: currentFilename,
         question,
       });

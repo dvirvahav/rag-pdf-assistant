@@ -2,7 +2,7 @@ import Keycloak from 'keycloak-js';
 
 // Keycloak configuration
 const keycloakConfig = {
-  url: 'http://localhost:8080',
+  url: 'http://localhost:8090',
   realm: 'rag-assistant',
   clientId: 'rag-frontend',
 };
