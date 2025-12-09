@@ -1,0 +1,54 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Environment files
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# Documentation
+docs/
+*.md
+LICENSE
+
+# Uploads (will be mounted as volume)
+uploads/
+
+# Tests
+tests/
+*.test.py
+backend/test_embedding.py
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Frontend (if not needed in backend container)
+frontend/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # ========================================
+  # Qdrant Vector Database
+  # ========================================
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: rag-qdrant
+    ports:
+      - "6333:6333"  # REST API
+      - "6334:6334"  # gRPC API
+    volumes:
+      - qdrant_storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # ========================================
+  # FastAPI Backend
+  # ========================================
+  backend:
+    build: .
+    container_name: rag-backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - qdrant
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app/backend  # Hot reload for development
+      - ./uploads:/app/uploads  # Persistent file storage
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # ========================================
+  # Optional: RabbitMQ (for future async processing)
+  # ========================================
+  # Uncomment when implementing async processing with Celery
+  # rabbitmq:
+  #   image: rabbitmq:3-management
+  #   container_name: rag-rabbitmq
+  #   ports:
+  #     - "5672:5672"   # AMQP protocol
+  #     - "15672:15672" # Management UI
+  #   environment:
+  #     - RABBITMQ_DEFAULT_USER=admin
+  #     - RABBITMQ_DEFAULT_PASS=admin
+  #   volumes:
+  #     - rabbitmq_data:/var/lib/rabbitmq
+  #   restart: unless-stopped
+  #   networks:
+  #     - rag-network
+
+  # ========================================
+  # Optional: Redis (for job status tracking)
+  # ========================================
+  # Uncomment when implementing job status tracking
+  # redis:
+  #   image: redis:7-alpine
+  #   container_name: rag-redis
+  #   ports:
+  #     - "6379:6379"
+  #   volumes:
+  #     - redis_data:/data
+  #   restart: unless-stopped
+  #   networks:
+  #     - rag-network
+
+volumes:
+  qdrant_storage:
+    driver: local
+  # rabbitmq_data:
+  #   driver: local
+  # redis_data:
+  #   driver: local
+
+networks:
+  rag-network:
+    driver: bridge

@@ -6,9 +6,9 @@ from openai import OpenAI
 load_dotenv()
 
 # Read OpenAI key from .env
-OPENAI_API_KEY = os.getenv("MY_OPENAI_KEY") or os.getenv("MY_OPENAI_KEY")
+OPENAI_API_KEY = os.getenv("MY_OPENAI_KEY") or os.getenv("OPENAI_API_KEY")
 if not OPENAI_API_KEY:
-    raise ValueError("Missing MY_OPENAI_KEY in .env")
+    raise ValueError("Missing MY_OPENAI_KEY or OPENAI_API_KEY in .env")
 
 # Create ONE global client instance (shared across services)
 openai_client = OpenAI(api_key=OPENAI_API_KEY)

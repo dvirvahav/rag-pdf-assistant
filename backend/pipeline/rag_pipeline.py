@@ -1,6 +1,6 @@
-from services.embedding_service import embed_chunks
-from services.qdrant_service import search_similar
-from services.rag_service import answer_question
+from backend.services.embeddings import embed_chunks
+from backend.services.vector_store import search_similar
+from backend.services.llm import answer_question
 
 def process_question(question: str) -> dict:
     """

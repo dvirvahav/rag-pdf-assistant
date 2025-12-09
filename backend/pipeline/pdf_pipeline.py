@@ -1,13 +1,7 @@
-from services.file_service import save_pdf
-from services.extraction_service import extract_text_from_pdf
-from services.cleaning_service import clean_text
-from services.chunk_service import chunk_text
-from services.embedding_service import embed_chunks
-from services.qdrant_service import (
-    init_collection,
-    is_file_indexed,
-    upsert_chunks
-)
+from backend.services.storage import save_pdf
+from backend.services.document_processing import extract_text_from_pdf, clean_text, chunk_text
+from backend.services.embeddings import embed_chunks
+from backend.services.vector_store import init_collection, is_file_indexed, upsert_chunks
 
 
 def process_pdf_upload(file) -> dict:
