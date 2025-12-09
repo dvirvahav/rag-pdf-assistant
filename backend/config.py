@@ -47,6 +47,21 @@ class Settings(BaseSettings):
     # RAG Settings
     # ========================================
     TOP_K_RESULTS: int = 5
+
+    # ========================================
+    # Async Processing Settings
+    # ========================================
+    REDIS_HOST: str = "localhost"
+    REDIS_PORT: int = 6379
+    REDIS_DB: int = 0
+
+    RABBITMQ_HOST: str = "localhost"
+    RABBITMQ_PORT: int = 5672
+    RABBITMQ_USER: str = "admin"
+    RABBITMQ_PASSWORD: str = "admin"
+
+    CELERY_BROKER_URL: Optional[str] = None
+    CELERY_RESULT_BACKEND: Optional[str] = None
     
     class Config:
         env_file = ".env"
@@ -64,6 +79,20 @@ class Settings(BaseSettings):
     def max_file_size_bytes(self) -> int:
         """Get max file size in bytes"""
         return self.MAX_FILE_SIZE_MB * 1024 * 1024
+
+    @property
+    def celery_broker_url(self) -> str:
+        """Get Celery broker URL"""
+        if self.CELERY_BROKER_URL:
+            return self.CELERY_BROKER_URL
+        return f"amqp://{self.RABBITMQ_USER}:{self.RABBITMQ_PASSWORD}@{self.RABBITMQ_HOST}:{self.RABBITMQ_PORT}//"
+
+    @property
+    def celery_result_backend(self) -> str:
+        """Get Celery result backend URL"""
+        if self.CELERY_RESULT_BACKEND:
+            return self.CELERY_RESULT_BACKEND
+        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/{self.REDIS_DB}"
 
 
 # Global settings instance

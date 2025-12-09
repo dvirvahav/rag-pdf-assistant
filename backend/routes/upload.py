@@ -5,8 +5,9 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, status
 from qdrant_client import QdrantClient
 import os
 
-from backend.pipeline.pdf_pipeline import process_pdf_upload
-from backend.models import UploadResponse, ErrorResponse
+from backend.tasks import process_pdf_upload_task
+from backend.services.job_status import job_status_service
+from backend.models import JobSubmissionResponse, JobStatusResponse, ErrorResponse
 from backend.config import settings
 
 
@@ -79,9 +80,9 @@ def validate_pdf_file(file: UploadFile) -> None:
 
 @router.post(
     "/upload",
-    summary="Upload a PDF and index it into Qdrant",
-    description="Saves the PDF, extracts text, cleans it, chunks it, embeds it, and stores the vectors in Qdrant.",
-    response_model=UploadResponse,
+    summary="Upload a PDF for async processing",
+    description="Queues the PDF for processing. Returns a job ID that can be used to check processing status.",
+    response_model=JobSubmissionResponse,
     responses={
         400: {"model": ErrorResponse, "description": "Invalid file"},
         413: {"model": ErrorResponse, "description": "File too large"},
@@ -89,16 +90,40 @@ def validate_pdf_file(file: UploadFile) -> None:
     }
 )
 async def upload_pdf(file: UploadFile = File(...)):
-    """Upload and process a PDF file"""
+    """Upload and queue a PDF file for processing"""
     try:
         # Validate file before processing
         validate_pdf_file(file)
         ensure_qdrant_alive()
-        
-        # Process the PDF
-        result = process_pdf_upload(file)
-        return result
-        
+
+        # Read file content
+        file_content = await file.read()
+
+        # Create job metadata
+        metadata = {
+            "filename": file.filename,
+            "file_size": len(file_content),
+            "content_type": file.content_type
+        }
+
+        # Create job
+        job_id = job_status_service.create_job("pdf_upload", metadata)
+
+        # Prepare task data
+        task_data = {
+            "filename": file.filename,
+            "content": file_content
+        }
+
+        # Submit task to Celery
+        process_pdf_upload_task.delay(job_id, task_data)
+
+        return JobSubmissionResponse(
+            job_id=job_id,
+            status="queued",
+            message="PDF upload job queued successfully"
+        )
+
     except HTTPException:
         # Re-raise HTTP exceptions (already have proper status codes)
         raise
@@ -106,5 +131,37 @@ async def upload_pdf(file: UploadFile = File(...)):
         # Catch any unexpected errors
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to process PDF: {str(e)}"
+            detail=f"Failed to queue PDF processing: {str(e)}"
+        )
+
+
+@router.get(
+    "/job/{job_id}",
+    summary="Get job status",
+    description="Check the status of a PDF processing job.",
+    response_model=JobStatusResponse,
+    responses={
+        404: {"model": ErrorResponse, "description": "Job not found"},
+        500: {"model": ErrorResponse, "description": "Server error"}
+    }
+)
+async def get_job_status(job_id: str):
+    """Get the status of a processing job"""
+    try:
+        job_data = job_status_service.get_job(job_id)
+
+        if not job_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Job {job_id} not found"
+            )
+
+        return JobStatusResponse(**job_data)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get job status: {str(e)}"
         )

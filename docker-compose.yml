@@ -41,46 +41,73 @@ services:
       - rag-network
 
   # ========================================
-  # Optional: RabbitMQ (for future async processing)
+  # RabbitMQ (for async processing with Celery)
   # ========================================
-  # Uncomment when implementing async processing with Celery
-  # rabbitmq:
-  #   image: rabbitmq:3-management
-  #   container_name: rag-rabbitmq
-  #   ports:
-  #     - "5672:5672"   # AMQP protocol
-  #     - "15672:15672" # Management UI
-  #   environment:
-  #     - RABBITMQ_DEFAULT_USER=admin
-  #     - RABBITMQ_DEFAULT_PASS=admin
-  #   volumes:
-  #     - rabbitmq_data:/var/lib/rabbitmq
-  #   restart: unless-stopped
-  #   networks:
-  #     - rag-network
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rag-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
+    networks:
+      - rag-network
 
   # ========================================
-  # Optional: Redis (for job status tracking)
+  # Redis (for job status tracking)
   # ========================================
-  # Uncomment when implementing job status tracking
-  # redis:
-  #   image: redis:7-alpine
-  #   container_name: rag-redis
-  #   ports:
-  #     - "6379:6379"
-  #   volumes:
-  #     - redis_data:/data
-  #   restart: unless-stopped
-  #   networks:
-  #     - rag-network
+  redis:
+    image: redis:7-alpine
+    container_name: rag-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # ========================================
+  # Celery Worker (for async task processing)
+  # ========================================
+  celery-worker:
+    build: .
+    container_name: rag-celery-worker
+    command: celery -A backend.celery_app worker --loglevel=info
+    depends_on:
+      - rabbitmq
+      - redis
+      - qdrant
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=admin
+    env_file:
+      - .env
+    volumes:
+      - ./backend:/app/backend  # Hot reload for development
+      - ./uploads:/app/uploads  # Persistent file storage
+    restart: unless-stopped
+    networks:
+      - rag-network
 
 volumes:
   qdrant_storage:
     driver: local
-  # rabbitmq_data:
-  #   driver: local
-  # redis_data:
-  #   driver: local
+  rabbitmq_data:
+    driver: local
+  redis_data:
+    driver: local
 
 networks:
   rag-network:

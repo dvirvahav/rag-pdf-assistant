@@ -41,3 +41,23 @@ class ErrorResponse(BaseModel):
     error: str
     detail: str = None
     status_code: int
+
+
+class JobStatusResponse(BaseModel):
+    """Response model for job status"""
+    id: str
+    type: str
+    status: str
+    progress: int
+    message: str
+    created_at: str
+    updated_at: str
+    result: dict = None
+    error: str = None
+
+
+class JobSubmissionResponse(BaseModel):
+    """Response model for job submission"""
+    job_id: str
+    status: str
+    message: str
