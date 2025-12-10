@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ChatInterface from './components/ChatInterface';
 import MessageInput from './components/MessageInput';
 import { uploadPDF, getJobStatus, askQuestion } from './services/api';

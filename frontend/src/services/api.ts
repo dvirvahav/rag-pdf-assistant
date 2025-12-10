@@ -1,7 +1,7 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 
 // Get API URL from environment variables
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance
 const api = axios.create({
@@ -26,9 +26,13 @@ export interface JobStatusResponse {
   message: string;
   created_at: string;
   updated_at: string;
-  result?: any;
+  result?: {
+    filename?: string;
+    [key: string]: unknown;
+  };
   error?: string;
 }
+
 
 export interface AskRequest {
   question: string;
@@ -42,26 +46,30 @@ export interface AskResponse {
 
 // Error handling helper
 const handleApiError = (error: unknown): void => {
-  const axiosError = error as any; // Type assertion for axios error
+  if (axios.isAxiosError(error)) {
+    const axiosError = error as AxiosError<{ detail?: string }>;
 
-  if (!axiosError.response) {
-    // Network error or backend not running
-    throw new Error('Cannot connect to backend server. Please make sure the backend is running on localhost:8000.');
-  }
+    if (!axiosError.response) {
+      // Network error or backend not running
+      throw new Error('Cannot connect to backend server. Please make sure the backend is running on localhost:8000.');
+    }
 
-  const status = axiosError.response.status;
-  const data = axiosError.response.data;
+    const status = axiosError.response.status;
+    const data = axiosError.response.data;
 
-  if (status === 413) {
-    throw new Error('File is too large. Maximum file size is 10MB.');
-  } else if (status === 415) {
-    throw new Error('Invalid file type. Only PDF files are supported.');
-  } else if (status === 500) {
-    throw new Error('Backend server error. Please try again later.');
-  } else if (status === 503) {
-    throw new Error('Backend service is temporarily unavailable. Please try again in a few moments.');
-  } else if (data?.detail) {
-    throw new Error(data.detail);
+    if (status === 413) {
+      throw new Error('File is too large. Maximum file size is 10MB.');
+    } else if (status === 415) {
+      throw new Error('Invalid file type. Only PDF files are supported.');
+    } else if (status === 500) {
+      throw new Error('Backend server error. Please try again later.');
+    } else if (status === 503) {
+      throw new Error('Backend service is temporarily unavailable. Please try again in a few moments.');
+    } else if (data?.detail) {
+      throw new Error(data.detail);
+    } else {
+      throw new Error('An unexpected error occurred. Please try again.');
+    }
   } else {
     throw new Error('An unexpected error occurred. Please try again.');
   }
@@ -82,6 +90,7 @@ export const uploadPDF = async (file: File): Promise<UploadResponse> => {
     return response.data;
   } catch (error) {
     handleApiError(error);
+    throw error; // This line will never be reached, but satisfies TypeScript
   }
 };
 
@@ -91,6 +100,7 @@ export const getJobStatus = async (jobId: string): Promise<JobStatusResponse> =>
     return response.data;
   } catch (error) {
     handleApiError(error);
+    throw error; // This line will never be reached, but satisfies TypeScript
   }
 };
 
@@ -100,6 +110,7 @@ export const askQuestion = async (question: string): Promise<AskResponse> => {
     return response.data;
   } catch (error) {
     handleApiError(error);
+    throw error; // This line will never be reached, but satisfies TypeScript
   }
 };
 

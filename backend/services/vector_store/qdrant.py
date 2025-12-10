@@ -9,6 +9,9 @@ from qdrant_client.models import (
 )
 from qdrant_client.http.exceptions import UnexpectedResponse, ResponseHandlingException
 import logging
+import hashlib
+
+from backend.config import settings
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -18,10 +21,11 @@ logger = logging.getLogger(__name__)
 # Connect to Qdrant (Docker/local)
 # ---------------------------------------------------------
 try:
-    client = QdrantClient(host="localhost", port=6333)
+    client = QdrantClient(host=settings.QDRANT_HOST, port=settings.QDRANT_PORT)
+    logger.info(f"Connected to Qdrant at {settings.QDRANT_HOST}:{settings.QDRANT_PORT}")
 except Exception as e:
     logger.error(f"Failed to initialize Qdrant client: {e}")
-    raise ConnectionError(f"Cannot connect to Qdrant at localhost:6333. Is Qdrant running? Error: {str(e)}")
+    raise ConnectionError(f"Cannot connect to Qdrant at {settings.QDRANT_HOST}:{settings.QDRANT_PORT}. Is Qdrant running? Error: {str(e)}")
 
 COLLECTION_NAME = "pdf_chunks"
 
@@ -137,9 +141,12 @@ def upsert_chunks(vectors: list, chunks: list, filename: str):
             # Validate vector
             if not isinstance(vector, list) or not vector:
                 raise ValueError(f"Vector at index {i} is invalid")
-            
+
+            # Generate valid point ID using hash (handles special characters)
+            point_id = hashlib.md5(f"{filename}_{i}".encode('utf-8')).hexdigest()
+
             point = PointStruct(
-                id=f"{filename}_{i}",
+                id=point_id,
                 vector=vector,
                 payload={
                     "text": text,
