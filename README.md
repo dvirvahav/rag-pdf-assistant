@@ -367,17 +367,88 @@ Return answer to user
 
 ---
 
+## 🎨 Frontend Application
+
+A modern, mobile-responsive React frontend is now included!
+
+### Features
+- 📱 **Mobile-First Design** - Works perfectly on all devices
+- 💬 **ChatGPT-like Interface** - Familiar conversation experience
+- 📄 **Drag-and-Drop Upload** - Easy PDF file selection
+- ⚡ **Real-time Updates** - Live processing status
+- 🎨 **Modern UI** - Clean design with Tailwind CSS
+
+### Quick Start
+
+```bash
+# Start backend (Docker)
+docker-compose up
+
+# Start frontend (separate terminal)
+cd frontend
+npm install
+npm run dev
+
+# Access the app
+# Frontend: http://localhost:5173
+# Backend API: http://localhost:8000
+```
+
+See [frontend/README.md](frontend/README.md) for detailed setup instructions.
+
+---
+
+## ☁️ AWS Production Deployment
+
+Complete CI/CD setup for production deployment on AWS!
+
+### Architecture
+- **Frontend**: React app → S3 + CloudFront (CDN)
+- **Backend**: Docker containers → EC2 + ECR
+- **CI/CD**: GitHub Actions for automated deployment
+
+### Quick Deploy
+
+1. **Set up AWS resources:**
+   - S3 bucket for frontend
+   - CloudFront distribution
+   - EC2 instance for backend
+   - ECR repository
+
+2. **Configure GitHub Secrets:**
+   ```bash
+   AWS_ACCESS_KEY_ID=your-key
+   AWS_SECRET_ACCESS_KEY=your-secret
+   AWS_REGION=us-east-1
+   S3_BUCKET_NAME=your-bucket
+   CLOUDFRONT_DISTRIBUTION_ID=your-dist-id
+   ECR_REGISTRY=your-registry
+   EC2_HOST=your-ec2-ip
+   EC2_USER=ubuntu
+   VITE_API_URL=https://api.yourdomain.com
+   ```
+
+3. **Deploy automatically:**
+   - Push to `main` branch
+   - GitHub Actions deploys frontend & backend
+   - Access your live app!
+
+See deployment guides in the docs folder.
+
+---
+
 ## 🚧 Future Enhancements
 
+- [x] Frontend React application
+- [x] Mobile-responsive design
+- [x] AWS production deployment
+- [x] GitHub Actions CI/CD
 - [ ] Multi-PDF support with document management
 - [ ] User authentication and authorization
 - [ ] Conversation history and context
 - [ ] Support for Word documents and images
 - [ ] Document summaries and insights
-- [ ] Async processing with Celery/RabbitMQ
-- [ ] Caching layer with Redis
-- [ ] Monitoring and logging (Prometheus, Grafana)
-- [ ] Frontend React application
+- [ ] Enhanced monitoring and logging
 
 ---
 
