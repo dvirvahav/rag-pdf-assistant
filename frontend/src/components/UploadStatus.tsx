@@ -1,7 +1,7 @@
 import { CheckCircle, XCircle, Clock, Loader } from 'lucide-react';
 import type { UploadStatusProps } from '../types';
 
-function UploadStatus({ job }: UploadStatusProps) {
+export const UploadStatus = ({ job }: UploadStatusProps) => {
   if (!job) return null;
 
   const getStatusIcon = () => {
@@ -76,4 +76,3 @@ function UploadStatus({ job }: UploadStatusProps) {
   );
 };
 
-export default UploadStatus;

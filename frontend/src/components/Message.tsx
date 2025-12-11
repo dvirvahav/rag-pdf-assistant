@@ -1,7 +1,7 @@
 import { User, Bot, FileText, AlertCircle, CheckCircle, Loader } from 'lucide-react';
 import type { MessageProps } from '../types';
 
-function MessageComponent({ message, isUploading = false }: MessageProps) {
+export const MessageComponent = ({ message, isUploading = false }: MessageProps) => {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const isFile = message.file !== undefined;
@@ -89,4 +89,3 @@ function MessageComponent({ message, isUploading = false }: MessageProps) {
   );
 };
 
-export default MessageComponent;

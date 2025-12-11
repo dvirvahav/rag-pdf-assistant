@@ -1,14 +1,14 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import MessageComponent from './Message';
+import {MessageComponent} from './Message';
 import { Upload, FileText } from 'lucide-react';
 import type { ChatInterfaceProps } from '../types';
 
-function ChatInterface({
+export const ChatInterface = ({
   messages,
   isLoading = false,
   onFileDrop,
   isUploading = false
-}: ChatInterfaceProps) {
+}: ChatInterfaceProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [dragActive, setDragActive] = useState(false);
 
@@ -131,4 +131,3 @@ function ChatInterface({
   );
 };
 
-export default ChatInterface;

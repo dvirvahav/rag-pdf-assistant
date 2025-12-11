@@ -3,13 +3,13 @@ import type { KeyboardEvent } from 'react';
 import { Send, Paperclip } from 'lucide-react';
 import type { MessageInputProps } from '../types';
 
-function MessageInput({
+export const MessageInput = ({
   onSendMessage,
   onFileSelect,
   disabled = false,
   attachmentDisabled = false,
   placeholder = "Ask a question about the document..."
-}: MessageInputProps) {
+}: MessageInputProps) => {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -113,4 +113,3 @@ function MessageInput({
   );
 };
 
-export default MessageInput;

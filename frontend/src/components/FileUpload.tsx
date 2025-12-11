@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
 import type { FileUploadProps } from '../types';
 
-const FileUpload: React.FC<FileUploadProps> = ({
+export const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,
   isUploading,
   disabled = false
@@ -120,5 +120,3 @@ const FileUpload: React.FC<FileUploadProps> = ({
     </div>
   );
 };
-
-export default FileUpload;

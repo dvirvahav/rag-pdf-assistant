@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
-import ChatInterface from './components/ChatInterface';
-import MessageInput from './components/MessageInput';
+import {ChatInterface} from './components/ChatInterface';
+import {MessageInput} from './components/MessageInput';
 import { uploadPDF, getJobStatus, askQuestion } from './services/api';
 import type { Message, UploadJob } from './types';
 
-function App() {
+export const App= () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentJob, setCurrentJob] = useState<UploadJob | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -205,4 +205,3 @@ function App() {
   );
 }
 
-export default App;
