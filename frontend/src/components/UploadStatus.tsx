@@ -1,12 +1,7 @@
-import React from 'react';
 import { CheckCircle, XCircle, Clock, Loader } from 'lucide-react';
-import type { UploadJob } from '../types';
+import type { UploadStatusProps } from '../types';
 
-interface UploadStatusProps {
-  job: UploadJob | null;
-}
-
-const UploadStatus: React.FC<UploadStatusProps> = ({ job }) => {
+function UploadStatus({ job }: UploadStatusProps) {
   if (!job) return null;
 
   const getStatusIcon = () => {

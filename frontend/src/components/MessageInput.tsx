@@ -1,22 +1,15 @@
 import React, { useState, useRef } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Send, Paperclip } from 'lucide-react';
+import type { MessageInputProps } from '../types';
 
-interface MessageInputProps {
-  onSendMessage: (message: string) => void;
-  onFileSelect?: (file: File) => void;
-  disabled?: boolean;
-  attachmentDisabled?: boolean;
-  placeholder?: string;
-}
-
-const MessageInput: React.FC<MessageInputProps> = ({
+function MessageInput({
   onSendMessage,
   onFileSelect,
   disabled = false,
   attachmentDisabled = false,
   placeholder = "Ask a question about the document..."
-}) => {
+}: MessageInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);

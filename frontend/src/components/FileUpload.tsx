@@ -1,11 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { Upload, FileText, X } from 'lucide-react';
-
-interface FileUploadProps {
-  onFileSelect: (file: File) => void;
-  isUploading: boolean;
-  disabled?: boolean;
-}
+import type { FileUploadProps } from '../types';
 
 const FileUpload: React.FC<FileUploadProps> = ({
   onFileSelect,

@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import type { UploadResponse, JobStatusResponse, AskResponse } from '../types';
 
 // Get API URL from environment variables
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -10,39 +11,6 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
-
-// Types
-export interface UploadResponse {
-  job_id: string;
-  status: string;
-  message: string;
-}
-
-export interface JobStatusResponse {
-  id: string;
-  type: string;
-  status: string;
-  progress: number;
-  message: string;
-  created_at: string;
-  updated_at: string;
-  result?: {
-    filename?: string;
-    [key: string]: unknown;
-  };
-  error?: string;
-}
-
-
-export interface AskRequest {
-  question: string;
-}
-
-export interface AskResponse {
-  question: string;
-  answer: string;
-  context_used?: string[];
-}
 
 // Error handling helper
 const handleApiError = (error: unknown): void => {

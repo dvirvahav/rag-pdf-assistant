@@ -1,21 +1,14 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import MessageComponent from './Message';
 import { Upload, FileText } from 'lucide-react';
-import type { Message } from '../types';
+import type { ChatInterfaceProps } from '../types';
 
-interface ChatInterfaceProps {
-  messages: Message[];
-  isLoading?: boolean;
-  onFileDrop?: (file: File) => void;
-  isUploading?: boolean;
-}
-
-const ChatInterface: React.FC<ChatInterfaceProps> = ({
+function ChatInterface({
   messages,
   isLoading = false,
   onFileDrop,
   isUploading = false
-}) => {
+}: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [dragActive, setDragActive] = useState(false);
 

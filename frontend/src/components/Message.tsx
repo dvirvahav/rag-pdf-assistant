@@ -1,13 +1,7 @@
-import React from 'react';
 import { User, Bot, FileText, AlertCircle, CheckCircle, Loader } from 'lucide-react';
-import type { Message } from '../types';
+import type { MessageProps } from '../types';
 
-interface MessageProps {
-  message: Message;
-  isUploading?: boolean;
-}
-
-const MessageComponent: React.FC<MessageProps> = ({ message, isUploading = false }) => {
+function MessageComponent({ message, isUploading = false }: MessageProps) {
   const isUser = message.role === 'user';
   const isSystem = message.role === 'system';
   const isFile = message.file !== undefined;
