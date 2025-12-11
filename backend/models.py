@@ -1,6 +1,7 @@
 """
 Pydantic models for request/response validation
 """
+from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 
 
@@ -25,21 +26,21 @@ class UploadResponse(BaseModel):
     """Response model for PDF upload"""
     status: str
     filename: str
-    chunks_count: int = None
-    message: str = None
+    chunks_count: Optional[int] = None
+    message: Optional[str] = None
 
 
 class AskResponse(BaseModel):
     """Response model for question answering"""
     question: str
     answer: str
-    context_used: list[str] = None
+    context_used: Optional[list[str]] = None
 
 
 class ErrorResponse(BaseModel):
     """Standard error response"""
     error: str
-    detail: str = None
+    detail: Optional[str] = None
     status_code: int
 
 
@@ -52,8 +53,8 @@ class JobStatusResponse(BaseModel):
     message: str
     created_at: str
     updated_at: str
-    result: dict = None
-    error: str = None
+    result: Optional[dict] = None
+    error: Optional[str] = None
 
 
 class JobSubmissionResponse(BaseModel):

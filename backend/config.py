@@ -38,7 +38,7 @@ class Settings(BaseSettings):
     # ========================================
     # Document Processing Settings
     # ========================================
-    UPLOAD_FOLDER: str = "uploads"
+    UPLOAD_FOLDER: str = os.path.join(os.getcwd(), "uploads")
     MAX_FILE_SIZE_MB: int = 10
     CHUNK_SIZE: int = 800
     CHUNK_OVERLAP: int = 100

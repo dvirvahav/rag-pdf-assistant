@@ -5,8 +5,9 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, status
 from qdrant_client import QdrantClient
 import os
 
-from backend.tasks import process_pdf_upload_task
 from backend.services.job_status import job_status_service
+from backend.services.queue import rabbitmq_producer
+from backend.services.storage import save_pdf
 from backend.models import JobSubmissionResponse, JobStatusResponse, ErrorResponse
 from backend.config import settings
 
@@ -109,14 +110,25 @@ async def upload_pdf(file: UploadFile = File(...)):
         # Create job
         job_id = job_status_service.create_job("pdf_upload", metadata)
 
-        # Prepare task data
+        # Save file to disk
+        # Reset file pointer for save_pdf
+        from io import BytesIO
+        file.file.seek(0)
+        class MockFile:
+            def __init__(self, file_obj, filename):
+                self.file = file_obj
+                self.filename = filename
+        mock_file = MockFile(file.file, file.filename)
+        filepath = save_pdf(mock_file)
+
+        # Prepare task data with filepath instead of content
         task_data = {
             "filename": file.filename,
-            "content": file_content
+            "filepath": filepath
         }
 
-        # Submit task to Celery
-        process_pdf_upload_task.delay(job_id, task_data)
+        # Publish job to RabbitMQ
+        rabbitmq_producer.publish_job(job_id, task_data)
 
         return JobSubmissionResponse(
             job_id=job_id,

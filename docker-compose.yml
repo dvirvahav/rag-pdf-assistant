@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   # ========================================
   # Qdrant Vector Database
@@ -12,68 +14,12 @@ services:
       - qdrant_storage:/qdrant/storage
     environment:
       - QDRANT__SERVICE__GRPC_PORT=6334
-    restart: unless-stopped
-    networks:
-      - rag-network
-
-  # ========================================
-  # FastAPI Backend
-  # ========================================
-  backend:
-    build: .
-    container_name: rag-backend
-    ports:
-      - "8000:8000"
-    depends_on:
-      - qdrant
-      - redis
-      - rabbitmq
-    environment:
-      - QDRANT_HOST=qdrant
-      - QDRANT_PORT=6333
-      - REDIS_HOST=redis
-      - REDIS_PORT=6379
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_PORT=5672
-      - RABBITMQ_USER=admin
-      - RABBITMQ_PASSWORD=admin
-    env_file:
-      - .env
-    volumes:
-      - ./backend:/app/backend  # Hot reload for development
-      - ./uploads:/app/uploads  # Persistent file storage
-    restart: unless-stopped
-    networks:
-      - rag-network
-
-  # ========================================
-  # React Frontend with Nginx
-  # ========================================
-  frontend:
-    build: ./frontend
-    container_name: rag-frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
-    networks:
-      - rag-network
-
-  # ========================================
-  # RabbitMQ (for async processing with Celery)
-  # ========================================
-  rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rag-rabbitmq
-    ports:
-      - "5672:5672"   # AMQP protocol
-      - "15672:15672" # Management UI
-    environment:
-      - RABBITMQ_DEFAULT_USER=admin
-      - RABBITMQ_DEFAULT_PASS=admin
-    volumes:
-      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
     networks:
       - rag-network
@@ -88,22 +34,57 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
     restart: unless-stopped
     networks:
       - rag-network
 
   # ========================================
-  # Celery Worker (for async task processing)
+  # RabbitMQ (for async job queuing)
   # ========================================
-  celery-worker:
-    build: .
-    container_name: rag-celery-worker
-    command: celery -A backend.celery_app worker --loglevel=info
-    depends_on:
-      - rabbitmq
-      - redis
-      - qdrant
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rag-rabbitmq
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI (http://localhost:15672 - admin/admin)
     environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # ========================================
+  # FastAPI Backend
+  # ========================================
+  backend:
+    build: .
+    container_name: rag-backend
+    ports:
+      - "8000:8000"  # API endpoint
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      # Service connections (use container names for internal communication)
       - QDRANT_HOST=qdrant
       - QDRANT_PORT=6333
       - REDIS_HOST=redis
@@ -112,8 +93,51 @@ services:
       - RABBITMQ_PORT=5672
       - RABBITMQ_USER=admin
       - RABBITMQ_PASSWORD=admin
+      # Python path for imports
+      - PYTHONPATH=/app
     env_file:
-      - .env
+      - .env  # Load OpenAI keys and other configs from .env
+    volumes:
+      - ./backend:/app/backend  # Hot reload for development
+      - ./uploads:/app/uploads  # Persistent file storage
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+  # ========================================
+  # Queue Consumer (for async PDF processing)
+  # ========================================
+  queue-consumer:
+    build: .
+    container_name: rag-queue-consumer
+    command: python backend/consumer.py
+    depends_on:
+      qdrant:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      # Service connections
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=admin
+      - RABBITMQ_PASSWORD=admin
+      # Python path for imports
+      - PYTHONPATH=/app
+    env_file:
+      - .env  # Load OpenAI keys and other configs from .env
     volumes:
       - ./backend:/app/backend  # Hot reload for development
       - ./uploads:/app/uploads  # Persistent file storage
@@ -121,6 +145,24 @@ services:
     networks:
       - rag-network
 
+  # ========================================
+  # React Frontend with Nginx
+  # ========================================
+  frontend:
+    build: ./frontend
+    container_name: rag-frontend
+    ports:
+      - "80:80"  # Main application entry point
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - rag-network
+
+# ========================================
+# Volumes (persistent data storage)
+# ========================================
 volumes:
   qdrant_storage:
     driver: local
@@ -129,6 +171,9 @@ volumes:
   redis_data:
     driver: local
 
+# ========================================
+# Networks (internal communication)
+# ========================================
 networks:
   rag-network:
     driver: bridge

@@ -1,7 +1,6 @@
 from fastapi import UploadFile
 import os
-
-UPLOAD_FOLDER = "uploads"
+from backend.config import settings
 
 def save_pdf(file: UploadFile) -> str:
     """
@@ -9,11 +8,14 @@ def save_pdf(file: UploadFile) -> str:
     Returns the full file path.
     """
 
+    # Get upload folder from settings (absolute path)
+    upload_folder = settings.UPLOAD_FOLDER
+
     # Make sure uploads folder exists
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    os.makedirs(upload_folder, exist_ok=True)
 
     # Full path of where the file will be stored
-    save_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    save_path = os.path.join(upload_folder, file.filename)
 
     # Save file in binary mode
     with open(save_path, "wb") as f:
