@@ -27,13 +27,13 @@ except Exception as e:
     logger.error(f"Failed to initialize Qdrant client: {e}")
     raise ConnectionError(f"Cannot connect to Qdrant at {settings.QDRANT_HOST}:{settings.QDRANT_PORT}. Is Qdrant running? Error: {str(e)}")
 
-COLLECTION_NAME = "pdf_chunks"
+COLLECTION_NAME = settings.COLLECTION_NAME
 
 
 # ---------------------------------------------------------
 # Create collection if missing
 # ---------------------------------------------------------
-def init_collection(vector_size: int = 1536):
+def init_collection(vector_size: int = settings.VECTOR_SIZE):
     """
     Create the collection if it does not exist yet.
     
