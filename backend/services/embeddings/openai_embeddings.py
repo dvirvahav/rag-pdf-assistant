@@ -1,9 +1,6 @@
 import os
 from dotenv import load_dotenv
 from openai import OpenAI, OpenAIError, RateLimitError, APIConnectionError, AuthenticationError
-from backend.services.llm.openai_client import get_openai_client
-
-client = get_openai_client()
 
 
 def embed_chunks(chunks: list[str]) -> list[list[float]]:
@@ -37,6 +34,10 @@ def embed_chunks(chunks: list[str]) -> list[list[float]]:
             raise ValueError(f"Chunk at index {i} is empty or whitespace only")
 
     try:
+        # Lazy import of OpenAI client - only when actually needed
+        from backend.services.llm.openai_client import get_openai_client
+        client = get_openai_client()
+
         response = client.embeddings.create(
             model="text-embedding-3-small",
             input=chunks

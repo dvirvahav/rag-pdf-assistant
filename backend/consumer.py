@@ -140,6 +140,10 @@ class PDFProcessingConsumer:
             )
             chunks = chunk_text(cleaned_text)
 
+            # Check if we have valid chunks
+            if not chunks:
+                raise ValueError("No valid chunks could be created from the PDF content. The document may contain insufficient text for processing.")
+
             # 6) Embed chunks
             job_status_service.update_job_status(
                 job_id, JobStatus.PROCESSING, 80, "Generating embeddings"
@@ -194,8 +198,20 @@ class PDFProcessingConsumer:
 
         except Exception as e:
             logger.error(f"Failed to process message: {e}")
-            # Reject the message and requeue it
-            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=True)
+
+            # Check if this is a content-related failure that shouldn't be requeued
+            error_msg = str(e).lower()
+            should_requeue = True
+
+            if ("chunks" in error_msg and "empty" in error_msg) or \
+               ("no valid chunks" in error_msg) or \
+               ("insufficient text" in error_msg):
+                # Content issues - don't requeue to prevent infinite loops
+                should_requeue = False
+                logger.warning(f"Job {job_id} failed due to content issues, not requeueing")
+
+            # Reject the message
+            ch.basic_nack(delivery_tag=method.delivery_tag, requeue=should_requeue)
 
     def start_consuming(self):
         """Start consuming messages"""
