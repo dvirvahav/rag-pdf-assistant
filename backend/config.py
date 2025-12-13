@@ -42,6 +42,19 @@ class Settings(BaseSettings):
     MAX_FILE_SIZE_MB: int = 10
     CHUNK_SIZE: int = 800
     CHUNK_OVERLAP: int = 100
+
+    # ========================================
+    # OCR Settings
+    # ========================================
+    OCR_CONFIDENCE_THRESHOLD: int = 60
+    MIN_TEXT_BLOCK_WORDS: int = 3
+    PRESERVE_NUMERIC_VALUES: bool = True
+    COLUMN_DETECTION_ENABLED: bool = True
+    MAX_COLUMNS: int = 2
+    HEADER_FOOTER_DETECTION: bool = True
+    CONTINUE_ON_ERROR: bool = True
+    FORCE_OCR: bool = False
+    MIN_TEXT_LENGTH_FOR_OCR_FALLBACK: int = 100
     
     # ========================================
     # RAG Settings
