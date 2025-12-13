@@ -42,7 +42,11 @@ def answer_question(question: str, context_chunks: list[str]) -> str:
     prompt = f"""
 Use the following context to answer the question. The context includes document content and metadata about the document itself (such as page count, author, creation date, etc.).
 
-If the information is not present in the context, answer: "The document does not contain this information."
+For questions about the document type or general document characteristics, you may infer from content structure and common patterns (e.g., sections like "Experience", "Education", "Skills" indicate a resume; tables with amounts and line items suggest an invoice; numbered sections suggest a report or article).
+
+For specific factual information, only use what's explicitly stated in the context.
+
+If the information is not present in the context and cannot be reasonably inferred from document structure or patterns, answer: "The document does not contain this information."
 
 Context:
 {context_block}
