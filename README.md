@@ -17,6 +17,13 @@ A production-ready RAG (Retrieval-Augmented Generation) system that allows users
 - 💬 **RAG Question Answering** - Context-aware answers using GPT-4o-mini
 - 📊 **Interactive API Documentation** - Built-in Swagger UI at `/docs`
 
+### Advanced PDF Processing
+- 🤖 **OCR Integration** - Automatic OCR fallback for scanned PDFs using Tesseract
+- 📄 **Layout Analysis** - Multi-column detection and text reordering
+- 🎯 **Smart Cleaning** - Header/footer filtering with pattern recognition
+- 🔧 **Error Resilience** - Continue processing despite partial failures
+- 📏 **Intelligent Chunking** - Document-structure aware text splitting
+
 ### Technical Features
 - ✅ **Comprehensive Error Handling** - Robust validation and error messages
 - ✅ **Pydantic Validation** - Type-safe request/response models
@@ -135,9 +142,12 @@ rag-pdf-assistant/
 │   │
 │   ├── services/                     # Business logic services
 │   │   ├── document_processing/      # PDF processing
-│   │   │   ├── extraction.py         # Text extraction
-│   │   │   ├── cleaning.py           # Text cleaning
-│   │   │   └── chunking.py           # Text chunking
+│   │   │   ├── extraction.py         # Smart text extraction with OCR
+│   │   │   ├── cleaning.py           # Advanced text cleaning
+│   │   │   ├── chunking.py           # Intelligent text chunking
+│   │   │   ├── layout.py             # Layout analysis & header/footer filtering
+│   │   │   ├── ocr.py                # OCR processing service
+│   │   │   └── types.py              # Data type definitions
 │   │   │
 │   │   ├── embeddings/               # Embedding generation
 │   │   │   └── openai_embeddings.py
@@ -183,6 +193,8 @@ rag-pdf-assistant/
 - **OpenAI API** - Embeddings (text-embedding-3-small) and Chat (GPT-4o-mini)
 - **Qdrant** - Vector database for similarity search
 - **pdfplumber** - PDF text extraction
+- **pytesseract** - OCR processing for scanned PDFs
+- **Pillow** - Image processing for OCR
 - **python-dotenv** - Environment variable management
 - **Uvicorn** - ASGI server
 
@@ -319,23 +331,34 @@ For detailed Docker instructions, see [DOCKER_SETUP.md](DOCKER_SETUP.md).
 
 ## 📖 How It Works
 
-### 1. PDF Upload & Processing Pipeline
+### 1. Enhanced PDF Upload & Processing Pipeline
 
 ```
 User uploads PDF
     ↓
 Save file to /uploads
     ↓
-Extract text (pdfplumber)
+Smart Text Extraction (pdfplumber + OCR fallback)
     ↓
-Clean text (remove extra spaces, newlines)
+Layout Analysis (multi-column detection & reordering)
     ↓
-Split into chunks (800 chars, 100 overlap)
+Header/Footer Filtering (pattern-based removal)
+    ↓
+Advanced Text Cleaning (preserve important short blocks)
+    ↓
+Intelligent Chunking (document-structure aware splitting)
     ↓
 Generate embeddings (OpenAI)
     ↓
 Store in Qdrant (vectors + metadata)
 ```
+
+**Smart Processing Features:**
+- **OCR Integration**: Automatic fallback to Tesseract OCR for scanned PDFs
+- **Layout Intelligence**: Detects and reorders multi-column text
+- **Content Preservation**: Keeps important short blocks (footnotes, captions, etc.)
+- **Error Resilience**: Continues processing despite partial page failures
+- **Quality Assurance**: Filters low-quality chunks and validates content
 
 ### 2. RAG Query Pipeline
 

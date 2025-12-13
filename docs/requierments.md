@@ -12,10 +12,14 @@ Build a simple RAG-based system that allows a user to upload a PDF and ask quest
 - Backend saves the file temporarily in `/uploads`.
 - After processing, the file may be deleted (MVP).
 
-### 2.2 Text Extraction
-- Backend reads the PDF using pdfplumber or PyPDF2.
-- Extract full text.
-- Clean formatting (newlines, spaces).
+### 2.2 Enhanced Text Extraction
+- **Smart Dual-Mode Processing**: Backend first attempts text extraction using pdfplumber
+- **OCR Fallback**: If text extraction yields <100 characters or appears garbled, automatically falls back to Tesseract OCR
+- **Page-by-Page Processing**: Processes each page individually with detailed error tracking
+- **Layout Analysis**: Detects multi-column layouts and reorders text for proper reading flow
+- **Header/Footer Filtering**: Identifies and removes repeating header/footer patterns across pages
+- **Error Resilience**: Continues processing despite partial page failures, logs detailed error information
+- **Advanced Cleaning**: Preserves important short content (footnotes, captions, numeric values) while removing noise
 
 ### 2.3 Chunking
 - Split extracted text into chunks (e.g., 500–1000 chars).
@@ -60,7 +64,8 @@ Build a simple RAG-based system that allows a user to upload a PDF and ask quest
 ### Backend
 - Python 3
 - FastAPI (API)
-- pdfplumber / PyPDF2 (PDF extraction)
+- pdfplumber / PyPDF2 (PDF text extraction)
+- pytesseract + Pillow (OCR processing for scanned PDFs)
 - OpenAI SDK (embeddings + LLM)
 - Qdrant (vector database)
 - Uvicorn (server)
