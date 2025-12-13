@@ -40,8 +40,9 @@ def answer_question(question: str, context_chunks: list[str]) -> str:
     context_block = "\n\n".join(context_chunks)
 
     prompt = f"""
-Use ONLY the following context to answer the question.
-If the information is not present, answer: "The document does not contain this information."
+Use the following context to answer the question. The context includes document content and metadata about the document itself (such as page count, author, creation date, etc.).
+
+If the information is not present in the context, answer: "The document does not contain this information."
 
 Context:
 {context_block}

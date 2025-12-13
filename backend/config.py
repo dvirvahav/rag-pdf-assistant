@@ -55,6 +55,12 @@ class Settings(BaseSettings):
     CONTINUE_ON_ERROR: bool = True
     FORCE_OCR: bool = False
     MIN_TEXT_LENGTH_FOR_OCR_FALLBACK: int = 100
+
+    # ========================================
+    # Document Metadata Settings
+    # ========================================
+    INCLUDE_DOC_METADATA: bool = True
+    METADATA_FIELDS: list = ["total_pages", "author", "title", "creation_date", "file_size_mb"]
     
     # ========================================
     # RAG Settings

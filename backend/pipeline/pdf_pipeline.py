@@ -1,5 +1,6 @@
 from backend.services.storage import save_pdf
 from backend.services.document_processing import extract_text_from_pdf_smart, clean_text, chunk_text
+from backend.services.document_processing.metadata_extractor import extract_document_metadata, get_metadata_summary
 from backend.services.embeddings import embed_chunks
 from backend.services.vector_store import init_collection, is_file_indexed, upsert_chunks
 
@@ -33,7 +34,17 @@ def process_pdf_upload(file) -> dict:
             "filename": filename
         }
 
-    # 3) Extract with OCR fallback
+    # 3) Extract document metadata
+    doc_metadata = None
+    if settings.INCLUDE_DOC_METADATA:
+        try:
+            doc_metadata = extract_document_metadata(filepath)
+            metadata_summary = get_metadata_summary(doc_metadata)
+            print(f"Extracted metadata: {metadata_summary}")
+        except Exception as e:
+            print(f"Warning: Failed to extract document metadata: {str(e)}")
+
+    # 4) Extract with OCR fallback
     extraction_result = extract_text_from_pdf_smart(filepath)
 
     # Log extraction results
@@ -52,13 +63,13 @@ def process_pdf_upload(file) -> dict:
             "extraction_stats": extraction_result.stats
         }
 
-    # 4) Clean
+    # 5) Clean
     cleaned_text = clean_text(extraction_result.full_text)
 
-    # 5) Chunk
+    # 6) Chunk
     chunks = chunk_text(cleaned_text)
 
-    # 6) Embed
+    # 7) Embed
     vectors = embed_chunks(chunks)
 
     # ---- DEBUG ----
@@ -77,8 +88,8 @@ def process_pdf_upload(file) -> dict:
         print("Type:", type(vectors[0]))
     print("### END DEBUG ###\n")
 
-    # 7) Save in Qdrant
-    upsert_chunks(vectors, chunks, filename)
+    # 8) Save in Qdrant with metadata
+    upsert_chunks(vectors, chunks, filename, doc_metadata)
 
     return {
         "status": "indexed",

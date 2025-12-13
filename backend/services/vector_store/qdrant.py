@@ -112,15 +112,16 @@ def is_file_indexed(filename: str) -> bool:
 # ---------------------------------------------------------
 # Insert embeddings + metadata
 # ---------------------------------------------------------
-def upsert_chunks(vectors: list, chunks: list, filename: str):
+def upsert_chunks(vectors: list, chunks: list, filename: str, doc_metadata: dict = None):
     """
     Save embeddings + their chunk text inside Qdrant.
-    
+
     Args:
         vectors (list): List of embedding vectors
         chunks (list): List of text chunks
         filename (str): Source filename
-        
+        doc_metadata (dict): Document metadata to include with each chunk
+
     Raises:
         ValueError: If inputs are invalid
         RuntimeError: If upsert operation fails
@@ -145,14 +146,21 @@ def upsert_chunks(vectors: list, chunks: list, filename: str):
             # Generate valid point ID using hash (handles special characters)
             point_id = hashlib.md5(f"{filename}_{i}".encode('utf-8')).hexdigest()
 
+            # Build payload with text and metadata
+            payload = {
+                "text": text,
+                "source": filename,
+                "chunk_id": i
+            }
+
+            # Include document metadata if provided
+            if doc_metadata:
+                payload["doc_metadata"] = doc_metadata
+
             point = PointStruct(
                 id=point_id,
                 vector=vector,
-                payload={
-                    "text": text,
-                    "source": filename,
-                    "chunk_id": i
-                }
+                payload=payload
             )
             points.append(point)
 
